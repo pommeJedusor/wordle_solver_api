@@ -1,23 +1,16 @@
-from enum import Enum
 import json, random
 
 
-def get_possible_words():
+def get_possible_words() -> list[str]:
     with open("possible_words.json", "r", encoding="utf8") as f:
         possible_words: list[str] = json.loads(f.read())
     return possible_words
 
 
-def get_usable_words():
+def get_usable_words() -> list[str]:
     with open("usable_words.json", "r", encoding="utf8") as f:
         usable_words: list[str] = json.loads(f.read())
     return usable_words
-
-
-class Color(Enum):
-    GREEN = 1
-    YELLOW = 2
-    BLACK = 3
 
 
 type letter_number = dict[str, tuple[int, bool]]
@@ -27,7 +20,7 @@ def get_well_placed_letters(solution: str, attempt: str) -> list[str | bool]:
     return [a if a == b else False for a, b in zip(solution, attempt)]
 
 
-def get_colors_from_attempt(solution: str, attempt: str) -> list[Color]:
+def get_colors_from_attempt(solution: str, attempt: str) -> str:
     well_placed_letters = get_well_placed_letters(solution, attempt)
 
     letter_number = {}
@@ -45,28 +38,28 @@ def get_colors_from_attempt(solution: str, attempt: str) -> list[Color]:
     colors = []
     for l, well_placed_letter in zip(attempt, well_placed_letters):
         if well_placed_letter:
-            colors.append(Color.GREEN)
+            colors.append("G")
         elif letter_number[l]:
             letter_number[l] -= 1
-            colors.append(Color.YELLOW)
+            colors.append("Y")
         else:
-            colors.append(Color.BLACK)
-    return colors
+            colors.append("B")
+    return "".join(colors)
 
 
 def get_well_placed_letters_wrong_place_letters_and_letter_number_from_colors(
-    attempt: str, colors: list[Color]
+    attempt: str, colors: str
 ) -> tuple[list[str | bool], list[str | bool], letter_number]:
     well_placed_letters: list[str | bool] = [
-        l if color == Color.GREEN else False for l, color in zip(attempt, colors)
+        l if color == "G" else False for l, color in zip(attempt, colors)
     ]
     wrong_placed_letters: list[str | bool] = [
-        l if color == Color.YELLOW else False for l, color in zip(attempt, colors)
+        l if color == "Y" else False for l, color in zip(attempt, colors)
     ]
 
     letter_number = get_empty_letter_number()
     for l, color in zip(attempt, colors):
-        if color == Color.BLACK:
+        if color == "B":
             letter_number[l] = (letter_number[l][0], True)
         else:
             letter_number[l] = (letter_number[l][0] + 1, letter_number[l][1])
@@ -106,28 +99,66 @@ def is_word_valid(
     return True
 
 
-def main():
-    possible_words = get_possible_words()
-    word_to_find = "reset" or random.choice(possible_words)
-    first_word = "salet"
-    colors = get_colors_from_attempt(word_to_find, first_word)
-    print(word_to_find)
-    print(first_word)
-    print(colors)
-    print(len(possible_words))
-    well_placed_letters, wrong_placed_letters, letter_number = (
-        get_well_placed_letters_wrong_place_letters_and_letter_number_from_colors(
-            first_word, colors
-        )
-    )
-    filtered_words = [
-        word
-        for word in possible_words
-        if is_word_valid(word, well_placed_letters, wrong_placed_letters, letter_number)
+def evaluate_word(possible_words: list[str], word: str) -> float:
+    # possible_words = possible_words[:10]
+    sequences: dict[str, int] = {}
+    # print(word)
+    for w in possible_words:
+        colors = get_colors_from_attempt(w, word)
+        sequences[colors] = (sequences.get(colors) or 0) + 1
+        # print(w, colors)
+    # print(sequences)
+
+    scores = []
+    for colors, number in sequences.items():
+        # (number of word eliminated by color sequence) * probability of getting the sequence
+        scores.append((len(possible_words) - number) * (number / len(possible_words)))
+    # print(scores)
+    # print(sum(scores))
+    # exit()
+    return sum(scores)
+
+
+def get_best_word(possible_words: list[str], usable_words: list[str]) -> str:
+    if len(possible_words) <= 2:
+        return possible_words[0]
+    best_words = [
+        (word, evaluate_word(possible_words, word)) for word in usable_words[:3]
     ]
-    print(len(filtered_words))
-    for word in filtered_words:
-        print(word)
+    best_words.sort(key=lambda a: a[1], reverse=True)
+
+    for word in usable_words[3:]:
+        score = evaluate_word(possible_words, word)
+        best_words.append((word, score))
+        best_words.sort(key=lambda a: a[1], reverse=True)
+        best_words.pop()
+
+    print(best_words)
+    return best_words[0][0]
+
+
+def terminal_game():
+    possible_words = get_possible_words()
+    attempt = "roate"
+
+    while True:
+        print(f"the word is {attempt}")
+        colors = input("enter the colors\n")
+        if colors == "GGGGG":
+            break
+
+        possible_words = [
+            word
+            for word in possible_words
+            if get_colors_from_attempt(word, attempt) == colors
+        ]
+        print(f"there is {len(possible_words)} possible words left")
+        attempt = get_best_word(possible_words, get_usable_words())
+    print("word found")
+
+
+def main():
+    terminal_game()
 
 
 if __name__ == "__main__":
