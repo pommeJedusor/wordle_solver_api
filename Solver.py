@@ -133,7 +133,7 @@ def get_best_word(possible_words: list[str], usable_words: list[str]) -> str:
         best_words.sort(key=lambda a: a[1], reverse=True)
         best_words.pop()
 
-    print(best_words)
+    # print(best_words)
     return best_words[0][0]
 
 
