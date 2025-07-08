@@ -1,4 +1,6 @@
+import re
 from flask import Flask, Request, request
+from flask_cors import CORS, cross_origin
 
 from Solver import (
     get_possible_words,
@@ -13,38 +15,57 @@ app = Flask(__name__)
 usable_words = get_usable_words()
 first_word = "roate"
 
+cors = CORS(app)
 
-def is_request_valid(request: Request) -> bool:
-    if not request.is_json:
-        return False
 
-    words: list[dict[str, str]] = request.get_json()
-
-    if not type(words) is list:
-        return False
-    for word in words:
-        if not type(word) is dict or not word.get("word") or not word.get("colors"):
+def is_request_valid(words: list[list[str]]) -> bool:
+    for row in words:
+        if len(row) != 2:
             return False
+        if not re.search("^[a-z]{5}$", row[0]):
+            return False
+        if not re.search("^(G|Y|B){5}$", row[1]):
+            return False
+
+    if len(words) == 0 or words[0][0] != "roate":
+        return False
+
     return True
 
 
-@app.route("/get_next_attempt")
+@app.route("/get_next_attempt", methods=["GET"])
+@cross_origin()
 def get_next_attempt():
-    if not is_request_valid(request):
+    words = request.args.get("words")
+    if words == None:
         return "#request not valid"
-    words: list[dict[str, str]] = request.get_json()
-    if not words:
-        return first_word
+    words = [row.split("|") for row in words.split("||")]
+
+    if not is_request_valid(words):
+        return "#request not valid"
 
     possible_words = get_possible_words()
 
-    for word_colors in words:
-        word = word_colors["word"]
-        colors = word_colors["colors"]
+    for row in words:
+        word = row[0]
+        colors = row[1]
         possible_words = [
             possible_word
             for possible_word in possible_words
             if get_colors_from_attempt(possible_word, word) == colors
         ]
+        print(len(possible_words))
 
+    if (
+        not possible_words
+        or len(possible_words) == 1
+        and words[-1][0] == possible_words[0]
+    ):
+        return ""
     return get_best_word(possible_words, usable_words)
+
+
+@app.after_request
+def add_header(response):
+    response.cache_control.max_age = 3600
+    return response
