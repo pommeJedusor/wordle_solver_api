@@ -1,5 +1,5 @@
 import re
-from flask import Flask, Request, request
+from flask import Flask, request
 from flask_cors import CORS, cross_origin
 
 from second_word import second_word
@@ -80,3 +80,7 @@ def get_next_attempt():
 def add_header(response):
     response.cache_control.max_age = 3600
     return response
+
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000, debug=True)
