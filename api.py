@@ -2,6 +2,8 @@ import re
 from flask import Flask, Request, request
 from flask_cors import CORS, cross_origin
 
+from second_word import second_word
+
 from Solver import (
     get_possible_words,
     get_usable_words,
@@ -30,6 +32,9 @@ def is_request_valid(words: list[list[str]]) -> bool:
     if len(words) == 0 or words[0][0] != "roate":
         return False
 
+    if len(words) > 1 and second_word[words[0][1]] != words[1][0]:
+        return False
+
     return True
 
 
@@ -43,6 +48,9 @@ def get_next_attempt():
 
     if not is_request_valid(words):
         return "#request not valid"
+
+    if len(words) == 1:
+        return second_word.get(words[0][1]) or ""
 
     possible_words = get_possible_words()
 
