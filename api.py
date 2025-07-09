@@ -70,7 +70,10 @@ def get_next_attempt():
         and words[-1][0] == possible_words[0]
     ):
         return ""
-    return get_best_word(possible_words, usable_words)
+    is_final_word, word = get_best_word(possible_words, usable_words)
+    if is_final_word:
+        return word + "Y"
+    return word
 
 
 @app.after_request

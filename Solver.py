@@ -119,9 +119,14 @@ def evaluate_word(possible_words: list[str], word: str) -> float:
     return sum(scores)
 
 
-def get_best_word(possible_words: list[str], usable_words: list[str]) -> str:
-    if len(possible_words) <= 2:
-        return possible_words[0]
+def get_best_word(
+    possible_words: list[str], usable_words: list[str]
+) -> tuple[bool, str]:
+    if len(possible_words) == 1:
+        return True, possible_words[0]
+    elif len(possible_words) == 2:
+        return False, possible_words[0]
+
     best_words = [
         (word, evaluate_word(possible_words, word)) for word in usable_words[:3]
     ]
@@ -134,7 +139,7 @@ def get_best_word(possible_words: list[str], usable_words: list[str]) -> str:
         best_words.pop()
 
     # print(best_words)
-    return best_words[0][0]
+    return False, best_words[0][0]
 
 
 def terminal_game():
@@ -153,7 +158,7 @@ def terminal_game():
             if get_colors_from_attempt(word, attempt) == colors
         ]
         print(f"there is {len(possible_words)} possible words left")
-        attempt = get_best_word(possible_words, get_usable_words())
+        _, attempt = get_best_word(possible_words, get_usable_words())
     print("word found")
 
 

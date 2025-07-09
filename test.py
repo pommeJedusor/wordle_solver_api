@@ -13,7 +13,7 @@ def simulation(possible_words: list[str], scores: list[int], depth=1):
     if depth == 1:
         attempt = first_word
     else:
-        attempt = get_best_word(possible_words, usable_words)
+        _, attempt = get_best_word(possible_words, usable_words)
 
     sequences: dict[str, int] = {}
     for w in possible_words:
