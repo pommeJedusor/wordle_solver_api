@@ -1,6 +1,7 @@
 import re
 from flask import Flask, request
 from flask_cors import CORS, cross_origin
+import requests
 
 from second_word import second_word
 
@@ -36,6 +37,17 @@ def is_request_valid(words: list[list[str]]) -> bool:
         return False
 
     return True
+
+
+@app.route("/get_todays_word/<string:date>", methods=["GET"])
+@cross_origin()
+def get_todays_word(date: str):
+    is_date_valid = len(date) == 10 and re.search("^\d{4}-\d{2}-\d{2}$", date)
+    if not is_date_valid:
+        return "pomme"
+
+    r = requests.get(f"https://www.nytimes.com/svc/wordle/v2/{date}.json")
+    return r.json()["solution"]
 
 
 @app.route("/get_next_attempt", methods=["GET"])
