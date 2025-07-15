@@ -1,4 +1,23 @@
-import json, random
+import json, time
+
+# 34300195
+# key: f"{attempt}{solution}", value: colors
+colors_words: dict[str, str] = {}
+
+
+def get_colors_words() -> dict[str, str]:
+    if colors_words:
+        return colors_words
+
+    usable_words = get_usable_words()
+    possible_words = get_possible_words()
+    for attempt in usable_words:
+        for solution in possible_words:
+            key = attempt + solution
+            colors = get_colors_from_attempt(solution, attempt)
+            colors_words[key] = colors
+
+    return colors_words
 
 
 def get_possible_words() -> list[str]:
@@ -13,9 +32,6 @@ def get_usable_words() -> list[str]:
     return usable_words
 
 
-type letter_number = dict[str, tuple[int, bool]]
-
-
 def get_well_placed_letters(solution: str, attempt: str) -> list[str | bool]:
     return [a if a == b else False for a, b in zip(solution, attempt)]
 
@@ -25,12 +41,10 @@ def get_colors_from_attempt(solution: str, attempt: str) -> str:
 
     letter_number = {}
     for letter in attempt:
-        nb_letter_occurences_in_attempt = len([l for l in attempt if l == letter])
-        nb_letter_occurences_in_solution = len([l for l in solution if l == letter])
-        if nb_letter_occurences_in_attempt <= nb_letter_occurences_in_solution:
-            letter_number[letter] = nb_letter_occurences_in_attempt
-        else:
-            letter_number[letter] = nb_letter_occurences_in_solution
+        letter_number[letter] = min(
+            len([l for l in attempt if l == letter]),
+            len([l for l in solution if l == letter]),
+        )
 
     for letter in [l for l in well_placed_letters if l]:
         letter_number[letter] -= 1
@@ -47,99 +61,33 @@ def get_colors_from_attempt(solution: str, attempt: str) -> str:
     return "".join(colors)
 
 
-def get_well_placed_letters_wrong_place_letters_and_letter_number_from_colors(
-    attempt: str, colors: str
-) -> tuple[list[str | bool], list[str | bool], letter_number]:
-    well_placed_letters: list[str | bool] = [
-        l if color == "G" else False for l, color in zip(attempt, colors)
-    ]
-    wrong_placed_letters: list[str | bool] = [
-        l if color == "Y" else False for l, color in zip(attempt, colors)
-    ]
-
-    letter_number = get_empty_letter_number()
-    for l, color in zip(attempt, colors):
-        if color == "B":
-            letter_number[l] = (letter_number[l][0], True)
-        else:
-            letter_number[l] = (letter_number[l][0] + 1, letter_number[l][1])
-
-    return (well_placed_letters, wrong_placed_letters, letter_number)
-
-
-def get_empty_letter_number() -> letter_number:
-    letter_number = {}
-    for i in range(26):
-        letter_number[chr(i + 97)] = (0, False)
-    return letter_number
-
-
-def is_word_valid(
-    word: str,
-    well_placed_letters: list[str | bool],
-    wrong_placed_letters: list[str | bool],
-    letter_number: letter_number,
-) -> bool:
-    letter_number_word: dict[str, int] = {}
-    for i in range(26):
-        letter_number_word[chr(97 + i)] = 0
-
-    for i, letter in enumerate(word):
-        if well_placed_letters[i] and well_placed_letters[i] != letter:
-            return False
-        if wrong_placed_letters[i] and wrong_placed_letters[i] == letter:
-            return False
-
-        if letter in letter_number_word:
-            letter_number_word[letter] += 1
-    for l, (number, is_max) in letter_number.items():
-        if number > letter_number_word[l] or is_max and letter_number_word[l] != number:
-            return False
-
-    return True
-
-
 def evaluate_word(possible_words: list[str], word: str) -> float:
-    # possible_words = possible_words[:10]
     sequences: dict[str, int] = {}
-    # print(word)
     for w in possible_words:
-        colors = get_colors_from_attempt(w, word)
+        key = word + w
+        colors = get_colors_words()[key]
         sequences[colors] = (sequences.get(colors) or 0) + 1
-        # print(w, colors)
-    # print(sequences)
 
     scores = []
     for colors, number in sequences.items():
-        # (number of word eliminated by color sequence) * probability of getting the sequence
         scores.append((len(possible_words) - number) * (number / len(possible_words)))
-    # print(scores)
-    # print(sum(scores))
-    # exit()
     return sum(scores)
 
 
 def get_best_word(
     possible_words: list[str], usable_words: list[str]
 ) -> tuple[bool, str]:
-    if len(possible_words) == 1:
-        return True, possible_words[0]
-    elif len(possible_words) == 2:
-        return False, possible_words[0]
+    if len(possible_words) <= 2:
+        return len(possible_words) == 1, possible_words[0]
 
-    best_words = [
-        (word, evaluate_word(possible_words, word)) for word in usable_words[:3]
-    ]
-    best_words.sort(key=lambda a: a[1], reverse=True)
+    best_word = ("pomme", 0)
 
-    for word in usable_words[3:]:
+    for word in usable_words:
         score = evaluate_word(possible_words, word)
-        best_words.append((word, score))
-        best_words.sort(key=lambda a: a[1], reverse=True)
-        best_words.pop()
+        if score > best_word[1]:
+            best_word = (word, score)
 
-    # print(best_words)
-    return False, best_words[0][0]
+    return False, best_word[0]
 
 
 def terminal_game():
@@ -158,13 +106,28 @@ def terminal_game():
             if get_colors_from_attempt(word, attempt) == colors
         ]
         print(f"there is {len(possible_words)} possible words left")
+        start = time.time()
         _, attempt = get_best_word(possible_words, get_usable_words())
+        end = time.time()
+        print(end - start, "seconds")
     print("word found")
 
 
 def main():
-    terminal_game()
+    start = time.time()
+    get_colors_words()
+    end = time.time()
+    print(end - start, "seconds")
+
+    start = time.time()
+    _, attempt = get_best_word(get_possible_words(), get_usable_words())
+    end = time.time()
+    print(end - start, "seconds")
+    print(attempt)
+    # terminal_game()
 
 
 if __name__ == "__main__":
     main()
+else:
+    get_colors_words()
