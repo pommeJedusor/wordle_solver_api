@@ -5,3 +5,7 @@
 .venv/
 
 test.py
+
+**/*.c
+**/*cpython*
+**/build/
