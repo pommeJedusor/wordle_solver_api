@@ -1,4 +1,4 @@
-import json, random
+import json, time
 
 
 def get_possible_words() -> list[str]:
@@ -11,9 +11,6 @@ def get_usable_words() -> list[str]:
     with open("usable_words.json", "r", encoding="utf8") as f:
         usable_words: list[str] = json.loads(f.read())
     return usable_words
-
-
-type letter_number = dict[str, tuple[int, bool]]
 
 
 def get_well_placed_letters(solution: str, attempt: str) -> list[str | bool]:
@@ -47,75 +44,16 @@ def get_colors_from_attempt(solution: str, attempt: str) -> str:
     return "".join(colors)
 
 
-def get_well_placed_letters_wrong_place_letters_and_letter_number_from_colors(
-    attempt: str, colors: str
-) -> tuple[list[str | bool], list[str | bool], letter_number]:
-    well_placed_letters: list[str | bool] = [
-        l if color == "G" else False for l, color in zip(attempt, colors)
-    ]
-    wrong_placed_letters: list[str | bool] = [
-        l if color == "Y" else False for l, color in zip(attempt, colors)
-    ]
-
-    letter_number = get_empty_letter_number()
-    for l, color in zip(attempt, colors):
-        if color == "B":
-            letter_number[l] = (letter_number[l][0], True)
-        else:
-            letter_number[l] = (letter_number[l][0] + 1, letter_number[l][1])
-
-    return (well_placed_letters, wrong_placed_letters, letter_number)
-
-
-def get_empty_letter_number() -> letter_number:
-    letter_number = {}
-    for i in range(26):
-        letter_number[chr(i + 97)] = (0, False)
-    return letter_number
-
-
-def is_word_valid(
-    word: str,
-    well_placed_letters: list[str | bool],
-    wrong_placed_letters: list[str | bool],
-    letter_number: letter_number,
-) -> bool:
-    letter_number_word: dict[str, int] = {}
-    for i in range(26):
-        letter_number_word[chr(97 + i)] = 0
-
-    for i, letter in enumerate(word):
-        if well_placed_letters[i] and well_placed_letters[i] != letter:
-            return False
-        if wrong_placed_letters[i] and wrong_placed_letters[i] == letter:
-            return False
-
-        if letter in letter_number_word:
-            letter_number_word[letter] += 1
-    for l, (number, is_max) in letter_number.items():
-        if number > letter_number_word[l] or is_max and letter_number_word[l] != number:
-            return False
-
-    return True
-
-
 def evaluate_word(possible_words: list[str], word: str) -> float:
-    # possible_words = possible_words[:10]
     sequences: dict[str, int] = {}
-    # print(word)
     for w in possible_words:
         colors = get_colors_from_attempt(w, word)
         sequences[colors] = (sequences.get(colors) or 0) + 1
-        # print(w, colors)
-    # print(sequences)
 
     scores = []
     for colors, number in sequences.items():
-        # (number of word eliminated by color sequence) * probability of getting the sequence
         scores.append((len(possible_words) - number) * (number / len(possible_words)))
-    # print(scores)
-    # print(sum(scores))
-    # exit()
+
     return sum(scores)
 
 
@@ -163,7 +101,10 @@ def terminal_game():
 
 
 def main():
-    terminal_game()
+    start = time.time()
+    _, attempt = get_best_word(get_possible_words(), get_usable_words())
+    print(time.time() - start)
+    print(attempt)
 
 
 if __name__ == "__main__":
