@@ -1,4 +1,25 @@
-import json, time
+import json, time, heapq
+
+MAX_SIZE_POSSIBLE_WORDS = 100
+
+# 34300195
+# key: f"{attempt}{solution}", value: colors
+colors_words: dict[str, str] = {}
+
+
+def get_colors_words() -> dict[str, str]:
+    if colors_words:
+        return colors_words
+
+    usable_words = get_usable_words()
+    possible_words = get_possible_words()
+    for attempt in usable_words:
+        for solution in possible_words:
+            key = attempt + solution
+            colors = get_colors_from_attempt(solution, attempt)
+            colors_words[key] = colors
+
+    return colors_words
 
 
 def get_possible_words() -> list[str]:
@@ -22,12 +43,10 @@ def get_colors_from_attempt(solution: str, attempt: str) -> str:
 
     letter_number = {}
     for letter in attempt:
-        nb_letter_occurences_in_attempt = len([l for l in attempt if l == letter])
-        nb_letter_occurences_in_solution = len([l for l in solution if l == letter])
-        if nb_letter_occurences_in_attempt <= nb_letter_occurences_in_solution:
-            letter_number[letter] = nb_letter_occurences_in_attempt
-        else:
-            letter_number[letter] = nb_letter_occurences_in_solution
+        letter_number[letter] = min(
+            len([l for l in attempt if l == letter]),
+            len([l for l in solution if l == letter]),
+        )
 
     for letter in [l for l in well_placed_letters if l]:
         letter_number[letter] -= 1
@@ -53,31 +72,48 @@ def evaluate_word(possible_words: list[str], word: str) -> float:
     scores = []
     for colors, number in sequences.items():
         scores.append((len(possible_words) - number) * (number / len(possible_words)))
-
     return sum(scores)
+
+
+def get_best_words(possible_words: list[str], usable_words: list[str]) -> list[str]:
+    if len(possible_words) <= 2:
+        return [possible_words[0]]
+    possible_words = possible_words[:MAX_SIZE_POSSIBLE_WORDS]
+
+    scores: list[tuple[float, str]] = []
+
+    for word in usable_words:
+        score = evaluate_word(possible_words, word)
+        heapq.heappush(scores, (score, word))
+        if len(scores) > 100:
+            heapq.heappop(scores)
+
+    return [score[1] for score in scores]
 
 
 def get_best_word(
     possible_words: list[str], usable_words: list[str]
 ) -> tuple[bool, str]:
-    if len(possible_words) == 1:
-        return True, possible_words[0]
-    elif len(possible_words) == 2:
-        return False, possible_words[0]
+    if len(possible_words) <= 2:
+        return len(possible_words) == 1, possible_words[0]
 
-    best_words = [
-        (word, evaluate_word(possible_words, word)) for word in usable_words[:3]
-    ]
-    best_words.sort(key=lambda a: a[1], reverse=True)
+    best_word = "pomme"
+    best_score = 0
 
-    for word in usable_words[3:]:
+    for word in usable_words:
         score = evaluate_word(possible_words, word)
-        best_words.append((word, score))
-        best_words.sort(key=lambda a: a[1], reverse=True)
-        best_words.pop()
+        if score > best_score:
+            best_word, best_score = word, score
 
-    # print(best_words)
-    return False, best_words[0][0]
+    return False, best_word
+
+
+def get_next_guess(
+    possible_words: list[str], usable_words: list[str]
+) -> tuple[bool, str]:
+    best_words = get_best_words(possible_words, usable_words)
+
+    return get_best_word(possible_words, best_words)
 
 
 def terminal_game():
@@ -96,15 +132,20 @@ def terminal_game():
             if get_colors_from_attempt(word, attempt) == colors
         ]
         print(f"there is {len(possible_words)} possible words left")
+        start = time.time()
         _, attempt = get_best_word(possible_words, get_usable_words())
+        end = time.time()
+        print(end - start, "seconds")
     print("word found")
 
 
 def main():
     start = time.time()
-    _, attempt = get_best_word(get_possible_words(), get_usable_words())
-    print(time.time() - start)
+    _, attempt = get_next_guess(get_possible_words(), get_usable_words())
+    end = time.time()
+
     print(attempt)
+    print(end - start)
 
 
 if __name__ == "__main__":

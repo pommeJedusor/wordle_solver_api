@@ -6,10 +6,10 @@ import requests
 from second_word import second_word
 
 from Solver import (
+    get_next_guess,
     get_possible_words,
     get_usable_words,
     get_colors_from_attempt,
-    get_best_word,
 )
 
 
@@ -82,7 +82,7 @@ def get_next_attempt():
         and words[-1][0] == possible_words[0]
     ):
         return ""
-    is_final_word, word = get_best_word(possible_words, usable_words)
+    is_final_word, word = get_next_guess(possible_words, usable_words)
     if is_final_word:
         return word + "Y"
     return word

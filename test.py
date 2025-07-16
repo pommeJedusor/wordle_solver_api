@@ -1,7 +1,7 @@
 from Solver import (
+    get_next_guess,
     get_possible_words,
     get_usable_words,
-    get_best_word,
     get_colors_from_attempt,
 )
 
@@ -10,10 +10,7 @@ first_word = "roate"
 
 
 def simulation(possible_words: list[str], scores: list[int], depth=1):
-    if depth == 1:
-        attempt = first_word
-    else:
-        _, attempt = get_best_word(possible_words, usable_words)
+    _, attempt = get_next_guess(possible_words, usable_words)
 
     sequences: dict[str, int] = {}
     for w in possible_words:
@@ -31,14 +28,16 @@ def simulation(possible_words: list[str], scores: list[int], depth=1):
             if get_colors_from_attempt(word, attempt) == colors
         ]
         simulation(next_possible_words, scores, depth + 1)
-    print(scores)
     return scores
 
 
 def main():
     possible_words = get_possible_words()
-    scores = [0, 0, 37, 1028, 1205, 39, 0, 0, 0, 0]
-    # simulation(possible_words, scores)
+    scores = [0] * 10
+    # scores = [0, 0, 37, 1028, 1205, 39, 0, 0, 0, 0] # before heuristic
+    # score2 = [0, 0, 37, 1027, 1206, 39, 0, 0, 0, 0] # after heuristic
+
+    simulation(possible_words, scores)
     print(scores)
 
     # calcul avg
