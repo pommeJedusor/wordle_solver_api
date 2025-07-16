@@ -9,7 +9,7 @@ from Solver import (
     get_next_guess,
     get_possible_words,
     get_usable_words,
-    get_colors_from_attempt,
+    get_colors_interface,
 )
 
 
@@ -66,7 +66,7 @@ def get_next_attempt():
         possible_words = [
             possible_word
             for possible_word in possible_words
-            if get_colors_from_attempt(possible_word, word) == colors
+            if get_colors_interface(possible_word, word) == colors
         ]
         print(len(possible_words))
 

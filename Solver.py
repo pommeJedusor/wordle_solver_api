@@ -1,26 +1,8 @@
 import json, time, heapq
+import cython
 
 MAX_SIZE_POSSIBLE_WORDS = 100
 NUMBER_BEST_WORDS = 200
-
-# 34300195
-# key: f"{attempt}{solution}", value: colors
-colors_words: dict[str, str] = {}
-
-
-def get_colors_words() -> dict[str, str]:
-    if colors_words:
-        return colors_words
-
-    usable_words = get_usable_words()
-    possible_words = get_possible_words()
-    for attempt in usable_words:
-        for solution in possible_words:
-            key = attempt + solution
-            colors = get_colors_from_attempt(solution, attempt)
-            colors_words[key] = colors
-
-    return colors_words
 
 
 def get_possible_words() -> list[str]:
@@ -35,11 +17,13 @@ def get_usable_words() -> list[str]:
     return usable_words
 
 
+@cython.cfunc
 def get_well_placed_letters(solution: str, attempt: str) -> list[str | bool]:
     return [a if a == b else False for a, b in zip(solution, attempt)]
 
 
-def get_colors_from_attempt(solution: str, attempt: str) -> str:
+@cython.cfunc
+def get_colors(solution: str, attempt: str) -> str:
     well_placed_letters = get_well_placed_letters(solution, attempt)
 
     letter_number = {}
@@ -64,10 +48,11 @@ def get_colors_from_attempt(solution: str, attempt: str) -> str:
     return "".join(colors)
 
 
+@cython.cfunc
 def evaluate_word(possible_words: list[str], word: str) -> float:
     sequences: dict[str, int] = {}
     for w in possible_words:
-        colors = get_colors_from_attempt(w, word)
+        colors = get_colors(w, word)
         sequences[colors] = (sequences.get(colors) or 0) + 1
 
     scores = []
@@ -76,22 +61,7 @@ def evaluate_word(possible_words: list[str], word: str) -> float:
     return sum(scores)
 
 
-def get_best_words_with_scores(
-    possible_words: list[str], usable_words: list[str]
-) -> list[tuple[float, str]]:
-    possible_words = possible_words[:MAX_SIZE_POSSIBLE_WORDS]
-
-    scores: list[tuple[float, str]] = []
-
-    for word in usable_words:
-        score = evaluate_word(possible_words, word)
-        heapq.heappush(scores, (score, word))
-        if len(scores) > NUMBER_BEST_WORDS:
-            heapq.heappop(scores)
-
-    return scores
-
-
+@cython.cfunc
 def get_best_words(possible_words: list[str], usable_words: list[str]) -> list[str]:
     if len(possible_words) <= 2:
         return [possible_words[0]]
@@ -108,6 +78,7 @@ def get_best_words(possible_words: list[str], usable_words: list[str]) -> list[s
     return [score[1] for score in scores]
 
 
+@cython.cfunc
 def get_best_word(
     possible_words: list[str], usable_words: list[str]
 ) -> tuple[bool, str]:
@@ -133,29 +104,29 @@ def get_next_guess(
     return get_best_word(possible_words, best_words)
 
 
-def terminal_game():
-    possible_words = get_possible_words()
-    attempt = "roate"
+# @cython.cfunc
+# def terminal_game():
+#    possible_words = get_possible_words()
+#    attempt = "roate"
+#
+#    while True:
+#        print(f"the word is {attempt}")
+#        colors = input("enter the colors\n")
+#        if colors == "GGGGG":
+#            break
+#
+#        possible_words = [
+#            word for word in possible_words if get_colors(word, attempt) == colors
+#        ]
+#        print(f"there is {len(possible_words)} possible words left")
+#        start = time.time()
+#        _, attempt = get_best_word(possible_words, get_usable_words())
+#        end = time.time()
+#        print(end - start, "seconds")
+#    print("word found")
 
-    while True:
-        print(f"the word is {attempt}")
-        colors = input("enter the colors\n")
-        if colors == "GGGGG":
-            break
 
-        possible_words = [
-            word
-            for word in possible_words
-            if get_colors_from_attempt(word, attempt) == colors
-        ]
-        print(f"there is {len(possible_words)} possible words left")
-        start = time.time()
-        _, attempt = get_best_word(possible_words, get_usable_words())
-        end = time.time()
-        print(end - start, "seconds")
-    print("word found")
-
-
+@cython.cfunc
 def main():
     start = time.time()
     _, attempt = get_next_guess(get_possible_words(), get_usable_words())
@@ -163,6 +134,10 @@ def main():
 
     print(attempt)
     print(end - start)
+
+
+def get_colors_interface(solution: str, attempt: str) -> str:
+    return get_colors(solution, attempt)
 
 
 if __name__ == "__main__":
