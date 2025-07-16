@@ -16,7 +16,7 @@ from Solver import (
 app = Flask(__name__)
 
 usable_words = get_usable_words()
-first_word = "roate"
+first_word = "salet"
 
 cors = CORS(app)
 
@@ -29,12 +29,6 @@ def is_request_valid(words: list[list[str]]) -> bool:
             return False
         if not re.search("^(G|Y|B){5}$", row[1]):
             return False
-
-    if len(words) == 0 or words[0][0] != "roate":
-        return False
-
-    if len(words) > 1 and second_word[words[0][1]] != words[1][0]:
-        return False
 
     return True
 

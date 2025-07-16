@@ -1,6 +1,7 @@
 import json, time, heapq
 
 MAX_SIZE_POSSIBLE_WORDS = 100
+NUMBER_BEST_WORDS = 200
 
 # 34300195
 # key: f"{attempt}{solution}", value: colors
@@ -75,6 +76,22 @@ def evaluate_word(possible_words: list[str], word: str) -> float:
     return sum(scores)
 
 
+def get_best_words_with_scores(
+    possible_words: list[str], usable_words: list[str]
+) -> list[tuple[float, str]]:
+    possible_words = possible_words[:MAX_SIZE_POSSIBLE_WORDS]
+
+    scores: list[tuple[float, str]] = []
+
+    for word in usable_words:
+        score = evaluate_word(possible_words, word)
+        heapq.heappush(scores, (score, word))
+        if len(scores) > NUMBER_BEST_WORDS:
+            heapq.heappop(scores)
+
+    return scores
+
+
 def get_best_words(possible_words: list[str], usable_words: list[str]) -> list[str]:
     if len(possible_words) <= 2:
         return [possible_words[0]]
@@ -85,7 +102,7 @@ def get_best_words(possible_words: list[str], usable_words: list[str]) -> list[s
     for word in usable_words:
         score = evaluate_word(possible_words, word)
         heapq.heappush(scores, (score, word))
-        if len(scores) > 100:
+        if len(scores) > NUMBER_BEST_WORDS:
             heapq.heappop(scores)
 
     return [score[1] for score in scores]

@@ -4,3 +4,4 @@
 **/*.c
 **/*cpython*
 **/build/
+**/test.json
