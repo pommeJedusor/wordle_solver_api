@@ -1,8 +1,8 @@
 import json, time, heapq
 import cython
 
-MAX_SIZE_POSSIBLE_WORDS = 100
-NUMBER_BEST_WORDS = 200
+MAX_SIZE_POSSIBLE_WORDS = 40
+NUMBER_BEST_WORDS = 100
 
 
 def get_possible_words() -> list[str]:

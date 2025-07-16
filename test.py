@@ -17,13 +17,12 @@ def simulation(
     depth=1,
     previous_color: str | None = None,
 ):
-    # if depth == 1:
-    #    attempt = first_word
-    # elif depth == 2 and previous_color:
-    #    attempt = second_word[previous_color]
-    # else:
-    #    _, attempt = get_next_guess(possible_words, usable_words)
-    _, attempt = get_next_guess(possible_words, usable_words)
+    if depth == 1:
+        attempt = first_word
+    elif depth == 2 and previous_color:
+        attempt = second_word[previous_color]
+    else:
+        _, attempt = get_next_guess(possible_words, usable_words)
 
     sequences: dict[str, int] = {}
     for w in possible_words:
