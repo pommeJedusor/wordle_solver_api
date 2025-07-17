@@ -55,7 +55,7 @@ def get_next_attempt():
     if not is_request_valid(words):
         return "#request not valid"
 
-    if len(words) == 1:
+    if len(words) == 1 and words[0][0] == first_word:
         return second_word.get(words[0][1]) or ""
 
     possible_words = get_possible_words()
