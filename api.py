@@ -2,6 +2,7 @@ import re
 from flask import Flask, request
 from flask_cors import CORS, cross_origin
 import requests
+from datetime import datetime, timedelta, UTC
 
 from second_word import second_word
 
@@ -19,6 +20,25 @@ usable_words = get_usable_words()
 first_word = "salet"
 
 cors = CORS(app)
+
+solutions_of_the_day: dict[str, list[str]] = {}
+
+
+def get_solutions_of_the_day() -> list[str]:
+    if solutions_of_the_day.get(datetime.now(UTC).strftime("%Y-%m-%d")):
+        return solutions_of_the_day[datetime.now(UTC).strftime("%Y-%m-%d")]
+
+    possible_words = get_possible_words()
+    solutions: list[str] = []
+    # take yesterday's solution and tomorrow solution's too because of the different timezones
+    for i in [-1, 0, 1]:
+        date = (datetime.now(UTC) + timedelta(i)).strftime("%Y-%m-%d")
+        r = requests.get(f"https://www.nytimes.com/svc/wordle/v2/{date}.json")
+        solutions.append(r.json()["solution"])
+
+    solutions = [solution for solution in solutions if not solution in possible_words]
+    solutions_of_the_day[datetime.now(UTC).strftime("%Y-%m-%d")] = solutions
+    return solutions
 
 
 def is_request_valid(words: list[list[str]]) -> bool:
@@ -59,6 +79,10 @@ def get_next_attempt():
         return second_word.get(words[0][1]) or ""
 
     possible_words = get_possible_words()
+
+    # ensure that the solution of the day is in the dataset
+    for solution in get_solutions_of_the_day():
+        possible_words.append(solution)
 
     for row in words:
         word = row[0]
