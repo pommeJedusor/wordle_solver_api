@@ -53,6 +53,16 @@ def is_request_valid(words: list[list[str]]) -> bool:
     return True
 
 
+@app.route("/get_solution/<int:number>", methods=["GET"])
+@cross_origin()
+def get_solution(number: int):
+    possible_words = get_possible_words()
+    if 0 <= number < len(possible_words):
+        return get_possible_words()[number]
+    else:
+        return "#solution index not valid"
+
+
 @app.route("/get_todays_word/<string:date>", methods=["GET"])
 @cross_origin()
 def get_todays_word(date: str):
