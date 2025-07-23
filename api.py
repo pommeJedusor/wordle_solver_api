@@ -53,6 +53,12 @@ def is_request_valid(words: list[list[str]]) -> bool:
     return True
 
 
+@app.route("/is_word_usable/<string:word>", methods=["GET"])
+@cross_origin()
+def is_word_usable(word: str):
+    return word in get_usable_words()
+
+
 @app.route("/get_solution/<int:number>", methods=["GET"])
 @cross_origin()
 def get_solution(number: int):
